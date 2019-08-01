@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wiki-crawler
+  labels:
+    app: wiki-crawler
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wiki-crawler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 33%
+  template:
+    metadata:
+      name: wiki-crawler
+      labels:
+        app: wiki-crawler
+    spec:
+      containers:
+        - name: wiki-crawler
+          image: <DOCKER_USER>/<DOCKER_HUB_REPO>:<TAG>
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            exec:
+              command:
+                - echo
+                - i-am-alive
+            initialDelaySeconds: 2
+            periodSeconds: 2

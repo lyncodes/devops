@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wiki-web-node-port
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: api-web
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: web-ingress
+spec:
+  tls:
+    - secretName: www-cert
+    - secretName: test-cert
+  rules:
+    - host: www.lynwiki.dev
+      http:
+        paths:
+          - backend:
+              serviceName: wiki-web-node-port
+              servicePort: 80
+    - host: test.lynwiki.dev
+      http:
+        paths:
+          - backend:
+              serviceName: wiki-web-node-port
+              servicePort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-web
+  labels:
+    app: api-web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 33%
+  template:
+    metadata:
+      name: api-web
+      labels:
+        app: api-web
+    spec:
+      containers:
+        - name: api-web
+          image: <DOCKER_USER>/<DOCKER_HUB_REPO>:<TAG>
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          volumeMounts:
+            - mountPath: /wikiWeb/keys
+#              mount the dir from os root dir
+              name: rsa
+              readOnly: true
+      volumes:
+        - name: rsa
+          secret:
+            secretName: rsasecret

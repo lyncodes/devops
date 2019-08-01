@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: mongo
+provisioner: kubernetes.io/gce-pd
+# reclaimPolicy: Delete
+# delete by default
+parameters:
+  type: pd-ssd

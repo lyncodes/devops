@@ -1,0 +1,38 @@
+image: docker:latest
+services:
+  - docker:dind
+stages:
+  - build
+  - deploy
+#  build and deploy
+
+variables:
+  CONTAINER_IMAGE: ${DOCKER_USER}/${DOCKER_HUB_REPO}:${CI_COMMIT_SHORT_SHA}
+#  CI_COMMIT_SHORT_SHA is a random SHA value for every single commit
+# to split every single docker image
+
+build-go:
+  stage: build
+  script:
+    - docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+    - docker build -t ${CONTAINER_IMAGE} .
+    - docker push ${CONTAINER_IMAGE}
+
+deploy-web:
+  stage: deploy
+  image: lyndockerrepo/kubectl
+  script:
+    - kubectl config set-cluster k8s --server="${SERVER}"
+    - kubectl config set clusters.k8s.certificate-authority-data ${CERTIFICATE_AUTHORITY_DATA}
+    - kubectl config set-credentials gitlab --token="${USER_TOKEN}"
+    - kubectl config set-context default --cluster=k8s --user=gitlab
+    - kubectl config use-context default
+    - echo deploy ${CONTAINER_IMAGE}
+#    - sed for value replace in deployment.yaml
+    - sed -i "s/<DOCKER_USER>/${DOCKER_USER}/g" deployment.yaml
+    - sed -i "s/<DOCKER_HUB_REPO>/${DOCKER_HUB_REPO}/g" deployment.yaml
+    - sed -i "s/<TAG>/${CI_COMMIT_SHORT_SHA}/g" deployment.yaml
+#    -
+    - kubectl get nodes
+#    - check the kubectl log in the cluster successfully
+    - kubectl apply -f deployment.yaml
