@@ -121,6 +121,17 @@ So you should buy a domain and get a free certificate from let's encrypt.
 I buy a cheap domain from `google domain` and 
 the [**acme.sh**](https://github.com/Neilpang/acme.sh)
  is a very simple way to get a free certificate
+ 
+ Sure, you must set encryption for your application.
+ - JWT need RSA encryption
+ - Https also using RSA encryption
+   - ![secret](images/secret.png)
+ cause you can't pass the sensitive information in the `pod` or `deployment`, even in
+ the `docker image` is not safe, so we have to use the `secret` to pass sensitive information 
+ into working pods.
+ 
+ these secrets will be referenced in pod or deployment definition, which make our secret more safe.
+ 
 
 ### Scraper
 like the web api, the scraper also deployed as 
